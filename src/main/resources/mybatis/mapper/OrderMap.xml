@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.wrapper.mybatismapper.order.mapper.OrderMapper">
+    <resultMap id="OrderListMap" type="org.wrapper.mybatismapper.order.vo.OrderVO">
+        <id column="seq" property="seq" />
+        <result column="user_id" property="userId" />
+        <result column="name" property="name" />
+        <result column="email" property="email" />
+        <result column="address" property="address" />
+
+        <collection property="productObjList" ofType="org.wrapper.mybatismapper.order.vo.ProductVO">
+            <id column="seq" property="seq" />
+            <result column="order_seq" property="orderSeq" />
+            <result column="name" property="name" />
+            <result column="price" property="price" />
+        </collection>
+    </resultMap>
+
+    <select id="selectOrderList" resultMap="OrderListMap">
+        SELECT tb_o.seq,
+               tb_o.user_id,
+               tb_o.name,
+               tb_o.email,
+               tb_o.address,
+               tb_p.order_seq,
+               tb_p.name,
+               tb_p.price
+        FROM tb_order tb_o JOIN tb_product tb_p ON tb_o.seq = tb_p.order_seq
+    </select>
+
+</mapper>
