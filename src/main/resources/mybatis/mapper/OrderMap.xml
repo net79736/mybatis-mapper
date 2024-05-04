@@ -26,6 +26,59 @@
                tb_p.name,
                tb_p.price
         FROM tb_order tb_o JOIN tb_product tb_p ON tb_o.seq = tb_p.order_seq
+        <include refid="selectListOrderWhereClause" />
     </select>
+
+    <select id="selectOrderListByOrderSeq" parameterType="java.util.List" resultMap="OrderListMap">
+        SELECT tb_o.seq,
+               tb_o.user_id,
+               tb_o.name,
+               tb_o.email,
+               tb_o.address,
+               tb_p.order_seq,
+               tb_p.name,
+               tb_p.price
+        FROM tb_order tb_o JOIN tb_product tb_p ON tb_o.seq = tb_p.order_seq
+        WHERE  1 = 1
+        <if test="orderSeqList != null">
+            <foreach collection="orderSeqList" item="seq" open="AND tb_o.seq IN (" separator="," close=")">#{seq}</foreach>
+        </if>
+    </select>
+
+    <sql id="selectListOrderWhereClause">
+        <!-- 목록 조회 조건절 -->
+
+        <!-- 아이디 -->
+        <if test="userId != null and userId != ''">
+            AND tb_o.user_id LIKE CONCAT(#{userId}, '%')
+        </if>
+
+        <!-- 이름 -->
+        <if test="name != null and name != ''">
+            AND tb_o.name LIKE CONCAT(#{name}, '%')
+        </if>
+
+        <!-- 이메일 -->
+        <if test="email != null and email != ''">
+            AND tb_o.email = #{email}
+        </if>
+
+        <!-- 주소 -->
+        <if test="address != null and address != ''">
+            AND tb_o.address = #{address}
+        </if>
+
+        <!-- 제품 -->
+        <if test="productName != null and productName != ''">
+            AND tb_p.name = #{productName}
+        </if>
+
+        <!-- 가격 -->
+        <if test="price != null and price != ''">
+            <![CDATA[
+                AND tb_p.price <= #{price}
+            ]]>
+        </if>
+    </sql>
 
 </mapper>
