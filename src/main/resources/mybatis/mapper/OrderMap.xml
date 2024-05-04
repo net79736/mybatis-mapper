@@ -24,7 +24,10 @@
                tb_o.address,
                tb_p.order_seq,
                tb_p.name,
-               tb_p.price
+               tb_p.price,
+               <![CDATA[
+                   IF (tb_p.price > 50.0, '고가' , NULL) AS brand
+               ]]>
         FROM tb_order tb_o JOIN tb_product tb_p ON tb_o.seq = tb_p.order_seq
         <include refid="selectListOrderWhereClause" />
     </select>

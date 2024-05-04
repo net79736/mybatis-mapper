@@ -24,7 +24,7 @@ class OrderServiceTest {
     public void selectOrderListWhereClause() {
         SearchVO searchVO = new SearchVO();
         searchVO.setName("John Doe");
-        searchVO.setPrice(25.0);
+        searchVO.setPrice(90.0);
         List<OrderVO> orderVOS = orderService.selectOrderList(searchVO);
         log.info("사이즈 출력 : {}", orderVOS.size());
         for (OrderVO orderVO : orderVOS) {
