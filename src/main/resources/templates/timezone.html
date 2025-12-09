@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>타임존 테스트 - DB와 서버 시간 불일치 확인</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 30px 40px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+            margin-top: 10px;
+        }
+
+        .info-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .info-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            border-radius: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-card label {
+            display: block;
+            color: #555;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .info-card .value {
+            color: #333;
+            font-size: 1.2em;
+            font-weight: 700;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(17, 153, 142, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .data-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .data-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .data-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        .data-table tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .data-table td {
+            color: #333;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin: 2px;
+        }
+
+        .badge-datetime {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .badge-timestamp {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .badge-zoned {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .badge-local {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .detail-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .detail-section.active {
+            display: block;
+        }
+
+        .detail-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .detail-content {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .detail-content h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .detail-content p {
+            color: #666;
+            margin: 5px 0;
+            font-family: 'Courier New', monospace;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 1.2em;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #c62828;
+        }
+
+        .link-back {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .link-back:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #e0e0e0;
+        }
+
+        .comparison-table th {
+            background: #f5f5f5;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .comparison-table tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        /* 모달 스타일 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideDown 0.3s;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .modal-title {
+            font-size: 1.8em;
+            color: #667eea;
+            font-weight: 700;
+        }
+
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        .form-label .badge {
+            margin-left: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+            font-family: 'Courier New', monospace;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+            justify-content: flex-end;
+        }
+
+        .btn-fill-now {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 8px 20px;
+            font-size: 0.9em;
+        }
+
+        .btn-fill-now:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+        }
+
+        .help-text {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .info-notice {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+            border-left: 4px solid #ffc107;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            color: #856404;
+            font-weight: 600;
+        }
+
+        .info-notice strong {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 1.05em;
+        }
+
+        .form-input:disabled {
+            background-color: #f5f5f5;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .readonly-badge {
+            display: inline-block;
+            background: #ffc107;
+            color: #856404;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="link-back">← 메인으로 돌아가기</a>
+        
+        <div class="header">
+            <h1>🕐 타임존 테스트</h1>
+            <p class="subtitle">DB와 서버의 시간 불일치 문제 확인 및 분석</p>
+        </div>
+
+        <div class="info-section">
+            <div class="info-title">📊 환경 정보</div>
+            <div class="info-grid" id="timezoneInfo">
+                <div class="info-card">
+                    <label>JVM 타임존</label>
+                    <div class="value" id="jvmTimeZone">로딩 중...</div>
+                </div>
+                <div class="info-card">
+                    <label>DB Global 타임존</label>
+                    <div class="value" id="dbGlobalTimeZone">로딩 중...</div>
+                </div>
+                <div class="info-card">
+                    <label>DB Session 타임존</label>
+                    <div class="value" id="dbSessionTimeZone">로딩 중...</div>
+                </div>
+                <div class="info-card">
+                    <label>DB System 타임존</label>
+                    <div class="value" id="dbSystemTimeZone">로딩 중...</div>
+                </div>
+            </div>
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="loadAllData()">🔄 전체 데이터 새로고침</button>
+                <button class="btn btn-success" onclick="createKSTData()">➕ KST 데이터 생성</button>
+                <button class="btn btn-warning" onclick="createUTCData()">➕ UTC 데이터 생성</button>
+                <button class="btn btn-primary" onclick="openCreateModal()">📝 객체로 데이터 생성</button>
+            </div>
+        </div>
+
+        <div class="data-section">
+            <div class="data-title">📋 테스트 데이터 목록</div>
+            <div id="dataTableContainer">
+                <div class="loading">데이터를 불러오는 중...</div>
+            </div>
+        </div>
+
+        <div class="detail-section" id="detailSection">
+            <div class="detail-title">🔍 상세 분석</div>
+            <div id="detailContent"></div>
+        </div>
+    </div>
+
+    <!-- 객체로 데이터 생성 모달 -->
+    <div id="createModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">📝 객체로 데이터 생성</h2>
+                <span class="close" onclick="closeCreateModal()">&times;</span>
+            </div>
+            <div class="info-notice">
+                <strong>⚠️ 중요 안내</strong>
+                <div>입력하신 값은 무시되며, <strong>서버의 현재 시간(LocalDateTime.now())</strong>으로 자동 저장됩니다.</div>
+                <div style="margin-top: 5px; font-size: 0.9em;">아래 필드는 참고용으로만 표시되며, 실제 저장되는 값은 서버의 현재 시간입니다.</div>
+            </div>
+            <form id="createForm" onsubmit="handleCreateSubmit(event)">
+                <div class="form-group">
+                    <label class="form-label">
+                        zoneDateTime (DATETIME → ZonedDateTime)
+                        <span class="badge badge-datetime">DATETIME</span>
+                        <span class="badge badge-zoned">ZonedDateTime</span>
+                        <span class="readonly-badge">서버 시간 자동 설정</span>
+                    </label>
+                    <input type="text" 
+                           id="zoneDateTime" 
+                           class="form-input" 
+                           placeholder="서버의 현재 시간으로 자동 설정됩니다"
+                           disabled
+                           readonly>
+                    <div class="help-text">서버의 현재 시간이 ZonedDateTime 형식으로 자동 설정됩니다.</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        localDateTime (DATETIME → LocalDateTime)
+                        <span class="badge badge-datetime">DATETIME</span>
+                        <span class="badge badge-local">LocalDateTime</span>
+                        <span class="readonly-badge">서버 시간 자동 설정</span>
+                    </label>
+                    <input type="datetime-local" 
+                           id="localDateTime" 
+                           class="form-input"
+                           disabled
+                           readonly>
+                    <div class="help-text">서버의 현재 시간이 LocalDateTime 형식으로 자동 설정됩니다.</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        zoneTimestamp (TIMESTAMP → ZonedDateTime)
+                        <span class="badge badge-timestamp">TIMESTAMP</span>
+                        <span class="badge badge-zoned">ZonedDateTime</span>
+                        <span class="readonly-badge">서버 시간 자동 설정</span>
+                    </label>
+                    <input type="text" 
+                           id="zoneTimestamp" 
+                           class="form-input" 
+                           placeholder="서버의 현재 시간으로 자동 설정됩니다"
+                           disabled
+                           readonly>
+                    <div class="help-text">서버의 현재 시간이 ZonedDateTime 형식으로 자동 설정됩니다. (TIMESTAMP는 UTC로 저장)</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        localTimestamp (TIMESTAMP → LocalDateTime)
+                        <span class="badge badge-timestamp">TIMESTAMP</span>
+                        <span class="badge badge-local">LocalDateTime</span>
+                        <span class="readonly-badge">서버 시간 자동 설정</span>
+                    </label>
+                    <input type="datetime-local" 
+                           id="localTimestamp" 
+                           class="form-input"
+                           disabled
+                           readonly>
+                    <div class="help-text">서버의 현재 시간이 LocalDateTime 형식으로 자동 설정됩니다. (TIMESTAMP는 UTC로 저장)</div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn" onclick="closeCreateModal()" style="background: #ccc; color: #333;">취소</button>
+                    <button type="submit" class="btn btn-success">서버 현재 시간으로 생성</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 페이지 로드 시 초기 데이터 로드
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllData();
+        });
+
+        // 전체 데이터 로드
+        async function loadAllData() {
+            try {
+                // 타임존 정보 로드
+                await loadTimezoneInfo();
+                
+                // 테스트 데이터 로드
+                await loadTestData();
+            } catch (error) {
+                console.error('데이터 로드 실패:', error);
+                showError('데이터를 불러오는 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 타임존 정보 로드
+        async function loadTimezoneInfo() {
+            try {
+                const response = await fetch('/timezone/api/test-data');
+                const data = await response.json();
+                
+                document.getElementById('jvmTimeZone').textContent = data.jvmTimeZone || 'N/A';
+                
+                if (data.dbTimeZoneInfo) {
+                    document.getElementById('dbGlobalTimeZone').textContent = data.dbTimeZoneInfo.global || 'N/A';
+                    document.getElementById('dbSessionTimeZone').textContent = data.dbTimeZoneInfo.session || 'N/A';
+                    document.getElementById('dbSystemTimeZone').textContent = data.dbTimeZoneInfo.system || 'N/A';
+                }
+            } catch (error) {
+                console.error('타임존 정보 로드 실패:', error);
+                document.getElementById('jvmTimeZone').textContent = '오류';
+            }
+        }
+
+        // 테스트 데이터 로드
+        async function loadTestData() {
+            try {
+                const response = await fetch('/timezone/api/test-data');
+                const data = await response.json();
+                
+                const container = document.getElementById('dataTableContainer');
+                
+                if (!data.data || data.data.length === 0) {
+                    container.innerHTML = '<div class="loading">테스트 데이터가 없습니다. 위의 버튼을 클릭하여 데이터를 생성하세요.</div>';
+                    return;
+                }
+
+                let tableHTML = `
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>zonedatetime<br><span class="badge badge-datetime">DATETIME</span> <span class="badge badge-zoned">ZonedDateTime</span></th>
+                                <th>localdatetime<br><span class="badge badge-datetime">DATETIME</span> <span class="badge badge-local">LocalDateTime</span></th>
+                                <th>zonetimestamp<br><span class="badge badge-timestamp">TIMESTAMP</span> <span class="badge badge-zoned">ZonedDateTime</span></th>
+                                <th>localtimestamp<br><span class="badge badge-timestamp">TIMESTAMP</span> <span class="badge badge-local">LocalDateTime</span></th>
+                                <th>작업</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                data.data.forEach(item => {
+                    tableHTML += `
+                        <tr>
+                            <td><strong>${item.id}</strong></td>
+                            <td>${formatDateTime(item.zoneDateTime)}</td>
+                            <td>${formatDateTime(item.localDateTime)}</td>
+                            <td>${formatDateTime(item.zoneTimestamp)}</td>
+                            <td>${formatDateTime(item.localTimestamp)}</td>
+                            <td>
+                                <button class="btn btn-primary" style="padding: 8px 15px; font-size: 0.9em;" 
+                                        onclick="showDetail(${item.id})">상세 분석</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                tableHTML += `
+                        </tbody>
+                    </table>
+                `;
+
+                container.innerHTML = tableHTML;
+            } catch (error) {
+                console.error('테스트 데이터 로드 실패:', error);
+                document.getElementById('dataTableContainer').innerHTML = 
+                    '<div class="error">데이터를 불러오는 중 오류가 발생했습니다: ' + error.message + '</div>';
+            }
+        }
+
+        // 날짜 시간 포맷팅
+        function formatDateTime(dateTimeStr) {
+            if (!dateTimeStr) return '<span style="color: #999;">N/A</span>';
+            return dateTimeStr.replace('T', ' ').substring(0, 23);
+        }
+
+        // 상세 분석 표시
+        async function showDetail(id) {
+            try {
+                const response = await fetch(`/timezone/api/test-data/${id}`);
+                const data = await response.json();
+                
+                const detailSection = document.getElementById('detailSection');
+                const detailContent = document.getElementById('detailContent');
+                
+                let html = `
+                    <div class="detail-content">
+                        <h4>📌 ID: ${data.data.id}</h4>
+                        <p><strong>JVM 타임존:</strong> ${data.jvmTimeZone}</p>
+                    </div>
+                `;
+
+                // zonedatetime 분석
+                if (data.data.zoneDateTime) {
+                    html += `
+                        <div class="detail-content">
+                            <h4>🔵 zonedatetime (DATETIME → ZonedDateTime)</h4>
+                            <p><strong>원본 값:</strong> ${data.data.zoneDateTime}</p>
+                    `;
+                    if (data.zoneDateTimeAnalysis) {
+                        html += `
+                            <p><strong>UTC 변환:</strong> ${data.zoneDateTimeAnalysis.toUTC}</p>
+                            <p><strong>서울 타임존 변환:</strong> ${data.zoneDateTimeAnalysis.toSeoul}</p>
+                        `;
+                    }
+                    html += `</div>`;
+                }
+
+                // localdatetime 분석
+                if (data.data.localDateTime) {
+                    html += `
+                        <div class="detail-content">
+                            <h4>🟢 localdatetime (DATETIME → LocalDateTime)</h4>
+                            <p><strong>원본 값:</strong> ${data.data.localDateTime}</p>
+                            <p><em>타임존 정보 없이 그대로 저장된 값</em></p>
+                        </div>
+                    `;
+                }
+
+                // zonetimestamp 분석
+                if (data.data.zoneTimestamp) {
+                    html += `
+                        <div class="detail-content">
+                            <h4>🟡 zonetimestamp (TIMESTAMP → ZonedDateTime)</h4>
+                            <p><strong>원본 값:</strong> ${data.data.zoneTimestamp}</p>
+                    `;
+                    if (data.zoneTimestampAnalysis) {
+                        html += `
+                            <p><strong>UTC 변환:</strong> ${data.zoneTimestampAnalysis.toUTC}</p>
+                            <p><strong>서울 타임존 변환:</strong> ${data.zoneTimestampAnalysis.toSeoul}</p>
+                        `;
+                    }
+                    html += `</div>`;
+                }
+
+                // localtimestamp 분석
+                if (data.data.localTimestamp) {
+                    html += `
+                        <div class="detail-content">
+                            <h4>🟠 localtimestamp (TIMESTAMP → LocalDateTime)</h4>
+                            <p><strong>원본 값:</strong> ${data.data.localTimestamp}</p>
+                            <p><em>타임존 변환은 되지만 타임존 정보는 제거됨</em></p>
+                        </div>
+                    `;
+                }
+
+                // 비교 테이블
+                html += `
+                    <div class="detail-content">
+                        <h4>📊 타입별 비교</h4>
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th>필드</th>
+                                    <th>DB 타입</th>
+                                    <th>Java 타입</th>
+                                    <th>타임존 처리</th>
+                                    <th>값</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>zonedatetime</td>
+                                    <td>DATETIME</td>
+                                    <td>ZonedDateTime</td>
+                                    <td>서버에서 타임존 부여</td>
+                                    <td>${data.data.zoneDateTime || 'N/A'}</td>
+                                </tr>
+                                <tr>
+                                    <td>localdatetime</td>
+                                    <td>DATETIME</td>
+                                    <td>LocalDateTime</td>
+                                    <td>타임존 없음</td>
+                                    <td>${data.data.localDateTime || 'N/A'}</td>
+                                </tr>
+                                <tr>
+                                    <td>zonetimestamp</td>
+                                    <td>TIMESTAMP</td>
+                                    <td>ZonedDateTime</td>
+                                    <td>UTC 저장, 세션 타임존에 따라 변환</td>
+                                    <td>${data.data.zoneTimestamp || 'N/A'}</td>
+                                </tr>
+                                <tr>
+                                    <td>localtimestamp</td>
+                                    <td>TIMESTAMP</td>
+                                    <td>LocalDateTime</td>
+                                    <td>타임존 변환되지만 정보 제거</td>
+                                    <td>${data.data.localTimestamp || 'N/A'}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                detailContent.innerHTML = html;
+                detailSection.classList.add('active');
+                
+                // 스크롤 이동
+                detailSection.scrollIntoView({ behavior: 'smooth' });
+            } catch (error) {
+                console.error('상세 분석 로드 실패:', error);
+                showError('상세 분석을 불러오는 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+
+        // KST 데이터 생성
+        async function createKSTData() {
+            try {
+                const response = await fetch('/timezone/api/test-data/kst', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                alert(data.message);
+                loadAllData();
+            } catch (error) {
+                console.error('KST 데이터 생성 실패:', error);
+                alert('데이터 생성 중 오류가 발생했습니다.');
+            }
+        }
+
+        // UTC 데이터 생성
+        async function createUTCData() {
+            if (!confirm('UTC 환경에서 데이터를 생성합니다. 실제 DB 세션 타임존을 확인하세요.')) {
+                return;
+            }
+            try {
+                const response = await fetch('/timezone/api/test-data/utc', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                alert(data.message);
+                loadAllData();
+            } catch (error) {
+                console.error('UTC 데이터 생성 실패:', error);
+                alert('데이터 생성 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 에러 표시
+        function showError(message) {
+            const container = document.getElementById('dataTableContainer');
+            container.innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        // 모달 열기
+        function openCreateModal() {
+            document.getElementById('createModal').classList.add('active');
+            // 서버의 현재 시간으로 모든 필드 자동 채우기
+            fillAllCurrentTime();
+        }
+
+        // 모달 닫기
+        function closeCreateModal() {
+            document.getElementById('createModal').classList.remove('active');
+        }
+
+        // 모달 외부 클릭 시 닫기
+        window.onclick = function(event) {
+            const modal = document.getElementById('createModal');
+            if (event.target === modal) {
+                closeCreateModal();
+            }
+        }
+
+        // 현재 시간을 ZonedDateTime 형식으로 반환 (Asia/Seoul)
+        function getCurrentZoneDateTime() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const offset = '+09:00';
+            return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offset}[Asia/Seoul]`;
+        }
+
+        // 현재 시간을 LocalDateTime 형식으로 반환 (datetime-local input용)
+        function getCurrentLocalDateTime() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        // zoneDateTime 필드에 현재 시간 채우기
+        function fillCurrentZoneDateTime() {
+            document.getElementById('zoneDateTime').value = getCurrentZoneDateTime();
+        }
+
+        // localDateTime 필드에 현재 시간 채우기
+        function fillCurrentLocalDateTime() {
+            document.getElementById('localDateTime').value = getCurrentLocalDateTime();
+        }
+
+        // zoneTimestamp 필드에 현재 시간 채우기
+        function fillCurrentZoneTimestamp() {
+            document.getElementById('zoneTimestamp').value = getCurrentZoneDateTime();
+        }
+
+        // localTimestamp 필드에 현재 시간 채우기
+        function fillCurrentLocalTimestamp() {
+            document.getElementById('localTimestamp').value = getCurrentLocalDateTime();
+        }
+
+        // 모든 필드에 현재 시간 채우기
+        function fillAllCurrentTime() {
+            fillCurrentZoneDateTime();
+            fillCurrentLocalDateTime();
+            fillCurrentZoneTimestamp();
+            fillCurrentLocalTimestamp();
+        }
+
+        // 폼 제출 처리
+        async function handleCreateSubmit(event) {
+            event.preventDefault();
+            
+            // 서버의 현재 시간으로 모든 필드 다시 채우기 (표시용)
+            fillAllCurrentTime();
+            
+            // 빈 객체를 전송해도 서버에서 LocalDateTime.now()로 처리됨
+            // 하지만 명시적으로 빈 객체를 전송
+            const requestData = {};
+
+            try {
+                const response = await fetch('/timezone/api/test-data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ message: '알 수 없는 오류가 발생했습니다.' }));
+                    throw new Error(errorData.message || '데이터 생성 실패');
+                }
+
+                const data = await response.json();
+                alert(data.message || '서버의 현재 시간으로 데이터가 성공적으로 생성되었습니다.');
+                closeCreateModal();
+                loadAllData();
+            } catch (error) {
+                console.error('데이터 생성 실패:', error);
+                alert('데이터 생성 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
+

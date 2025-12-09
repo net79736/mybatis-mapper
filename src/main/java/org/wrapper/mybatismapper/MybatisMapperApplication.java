@@ -15,7 +15,7 @@ public class MybatisMapperApplication {
 		SpringApplication.run(MybatisMapperApplication.class, args);
 
         LocalDateTime now = LocalDateTime.now();
-        System.out.println("현재시간 " + now);
+        System.out.println("현재시간 " + now); // Asia/Seoul 현재시간 2025-12-09T14:04:12.397101 (한국시간으로 표현됨)
 	}
 
     @PostConstruct

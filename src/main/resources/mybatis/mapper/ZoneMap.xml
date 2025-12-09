@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.wrapper.mybatismapper.timezone.mapper.ZoneMapper">
+    
+    <!-- 타임존 테스트 결과 매핑 -->
+    <resultMap id="ZoneEntityMap" type="org.wrapper.mybatismapper.timezone.vo.ZoneEntity">
+        <id column="id" property="id" />
+        <!-- ZonedDateTime 필드는 커스텀 TypeHandler 명시적으로 지정 (log4jdbc 호환성) -->
+        <result column="zonedatetime" property="zoneDateTime" 
+                typeHandler="org.wrapper.mybatismapper.timezone.handler.ZonedDateTimeTypeHandler" />
+        <!-- LocalDateTime 필드도 커스텀 TypeHandler 명시적으로 지정 (log4jdbc 호환성) -->
+        <result column="localdatetime" property="localDateTime" 
+                typeHandler="org.wrapper.mybatismapper.timezone.handler.LocalDateTimeTypeHandler" />
+        <result column="zonetimestamp" property="zoneTimestamp" 
+                typeHandler="org.wrapper.mybatismapper.timezone.handler.ZonedDateTimeTypeHandler" />
+        <result column="local_timestamp" property="localTimestamp" 
+                typeHandler="org.wrapper.mybatismapper.timezone.handler.LocalDateTimeTypeHandler" />
+    </resultMap>
+    
+    <!-- 모든 데이터 조회 -->
+    <select id="findAll" resultMap="ZoneEntityMap">
+        SELECT 
+            id,
+            zonedatetime,
+            localdatetime,
+            zonetimestamp,
+            local_timestamp
+        FROM tb_timezone_test
+        ORDER BY id
+    </select>
+    
+    <!-- ID로 조회 -->
+    <select id="findById" parameterType="long" resultMap="ZoneEntityMap">
+        SELECT 
+            id,
+            zonedatetime,
+            localdatetime,
+            zonetimestamp,
+            local_timestamp
+        FROM tb_timezone_test
+        WHERE id = #{id}
+    </select>
+    
+    <!-- KST 환경에서 NOW()로 데이터 삽입 -->
+    <insert id="insertWithKSTNow">
+        INSERT INTO tb_timezone_test (
+            zonedatetime,
+            localdatetime,
+            zonetimestamp,
+            local_timestamp
+        ) VALUES (
+            NOW(),
+            NOW(),
+            NOW(),
+            NOW()
+        )
+    </insert>
+    
+    <!-- UTC 환경에서 NOW()로 데이터 삽입 -->
+    <!-- 주의: 이 쿼리는 실행 전에 DB 세션 타임존을 UTC로 변경해야 함 -->
+    <insert id="insertWithUTCNow">
+        INSERT INTO tb_timezone_test (
+            zonedatetime,
+            localdatetime,
+            zonetimestamp,
+            local_timestamp
+        ) VALUES (
+            NOW(),
+            NOW(),
+            NOW(),
+            NOW()
+        )
+    </insert>
+    
+    <!-- ZoneEntity 객체를 받아서 데이터 삽입 -->
+    <insert id="insert" parameterType="org.wrapper.mybatismapper.timezone.vo.ZoneEntity">
+        INSERT INTO tb_timezone_test (
+            zonedatetime,
+            localdatetime,
+            zonetimestamp,
+            local_timestamp
+        ) VALUES (
+            #{zoneDateTime, jdbcType=TIMESTAMP, typeHandler=org.wrapper.mybatismapper.timezone.handler.ZonedDateTimeTypeHandler},
+            #{localDateTime, jdbcType=TIMESTAMP, typeHandler=org.wrapper.mybatismapper.timezone.handler.LocalDateTimeTypeHandler},
+            #{zoneTimestamp, jdbcType=TIMESTAMP, typeHandler=org.wrapper.mybatismapper.timezone.handler.ZonedDateTimeTypeHandler},
+            #{localTimestamp, jdbcType=TIMESTAMP, typeHandler=org.wrapper.mybatismapper.timezone.handler.LocalDateTimeTypeHandler}
+        )
+    </insert>
+    
+    <!-- DB 글로벌 타임존 조회 -->
+    <select id="getGlobalTimeZone" resultType="string">
+        SELECT @@GLOBAL.time_zone
+    </select>
+    
+    <!-- DB 세션 타임존 조회 -->
+    <select id="getSessionTimeZone" resultType="string">
+        SELECT @@SESSION.time_zone
+    </select>
+    
+    <!-- DB 시스템 타임존 조회 -->
+    <select id="getSystemTimeZone" resultType="string">
+        SELECT @@system_time_zone
+    </select>
+    
+</mapper>

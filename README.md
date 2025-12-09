@@ -243,12 +243,133 @@ MyBatis의 동적 SQL 기능을 활용하여 조건부 WHERE 절을 생성합니
 </sql>
 ```
 
+## 🕐 타임존 테스트 기능
+
+이 프로젝트에는 DB와 서버의 시간 불일치 문제를 확인하고 테스트할 수 있는 기능이 포함되어 있습니다.
+
+### 개요
+
+포스팅에서 언급한 내용을 실제로 확인할 수 있는 테스트 코드와 API를 제공합니다:
+- DATETIME vs TIMESTAMP의 타임존 처리 차이
+- LocalDateTime vs ZonedDateTime의 동작 차이
+- JDBC URL의 serverTimezone 설정 영향
+- JVM 타임존 설정 영향
+
+### 테이블 생성
+
+타임존 테스트를 위한 테이블을 생성합니다:
+
+```sql
+-- timezone_test.sql 실행
+source src/main/resources/mybatis/SQL(script)/timezone_test.sql
+```
+
+### API 엔드포인트
+
+#### 1. 모든 테스트 데이터 조회
+```
+GET /api/timezone/test-data
+```
+
+응답 예시:
+```json
+{
+  "jvmTimeZone": "Asia/Seoul",
+  "dbTimeZoneInfo": {
+    "global": "SYSTEM",
+    "session": "SYSTEM",
+    "system": "KST"
+  },
+  "data": [
+    {
+      "id": 1,
+      "zoneDateTime": "2024-09-09T15:25:51+09:00[Asia/Seoul]",
+      "localDateTime": "2024-09-09T15:25:51",
+      "zoneTimestamp": "2024-09-09T15:25:51+09:00[Asia/Seoul]",
+      "localTimestamp": "2024-09-09T15:25:51"
+    }
+  ]
+}
+```
+
+#### 2. 특정 ID 데이터 상세 분석
+```
+GET /api/timezone/test-data/{id}
+```
+
+타임존 변환 분석 결과를 포함하여 반환합니다.
+
+#### 3. DB 타임존 정보 조회
+```
+GET /api/timezone/db-timezone
+```
+
+#### 4. 테스트 데이터 생성
+```
+POST /api/timezone/test-data/kst  # KST 환경에서 생성
+POST /api/timezone/test-data/utc  # UTC 환경에서 생성
+```
+
+### 테스트 코드 실행
+
+포스팅에서 언급한 여러 시나리오를 테스트할 수 있습니다:
+
+```bash
+./mvnw test -Dtest=ZoneServiceTest
+```
+
+**주요 테스트 시나리오:**
+
+1. **테스트 1**: 기본 환경(KST)에서 타임존 동작 확인
+   - 서버 JVM 타임존: KST
+   - JDBC URL 타임존 설정: 없음
+   - DB 타임존: KST
+
+2. **테스트 2**: JDBC URL UTC 설정 시 타임존 동작 확인
+   - 서버 JVM 타임존: KST
+   - JDBC URL 타임존 설정: UTC
+   - DB 타임존: KST
+
+3. **상세 분석**: 특정 ID의 데이터를 상세 분석하여 타임존 변환 문제 확인
+
+4. **타임존 변환 중복 문제 재현**: 포스팅에서 언급한 문제점 재현
+
+### 테스트 방법
+
+1. **application.yml 설정 확인**
+   ```yaml
+   spring:
+     datasource:
+       hikari:
+         jdbc-url: jdbc:log4jdbc:mysql://localhost:3307/orders?serverTimezone=UTC&characterEncoding=UTF-8
+   ```
+   - `serverTimezone=UTC` 설정 여부에 따라 테스트 결과가 달라집니다.
+
+2. **테스트 실행**
+   - 테스트 코드를 실행하여 로그를 확인합니다.
+   - API를 호출하여 결과를 확인합니다.
+
+3. **문제 확인**
+   - 포스팅에서 언급한 문제점들이 실제로 발생하는지 확인합니다.
+   - ZonedDateTime을 UTC로 변환할 때 예상과 다른 결과가 나오는지 확인합니다.
+
+### 관련 파일
+
+- `src/main/java/org/wrapper/mybatismapper/timezone/vo/ZoneEntity.java`
+- `src/main/java/org/wrapper/mybatismapper/timezone/mapper/ZoneMapper.java`
+- `src/main/resources/mybatis/mapper/ZoneMap.xml`
+- `src/main/java/org/wrapper/mybatismapper/timezone/service/ZoneService.java`
+- `src/main/java/org/wrapper/mybatismapper/timezone/controller/ZoneController.java`
+- `src/test/java/org/wrapper/mybatismapper/timezone/service/ZoneServiceTest.java`
+- `src/main/resources/mybatis/SQL(script)/timezone_test.sql`
+
 ## 📌 참고사항
 
 - 이 프로젝트는 WAR 파일로 패키징되어 외부 톰캣 서버에 배포할 수 있습니다.
 - SQL 로깅을 위해 `log4jdbc-log4j2`를 사용합니다.
 - TimeZone은 UTC로 설정되어 있습니다.
 - Lombok을 사용하여 보일러플레이트 코드를 줄였습니다.
+- 타임존 테스트 기능을 통해 DB와 서버의 시간 불일치 문제를 확인할 수 있습니다.
 
 ## 📄 라이선스
 
