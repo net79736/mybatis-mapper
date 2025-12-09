@@ -2,46 +2,58 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.wrapper.mybatismapper.order.mapper.OrderMapper">
     <resultMap id="OrderListMap" type="org.wrapper.mybatismapper.order.vo.OrderVO">
-        <id column="seq" property="seq" />
-        <result column="user_id" property="userId" />
-        <result column="name" property="name" />
+        <id column="order_seq" property="seq" />
+        <result column="userId" property="userId" />
+        <result column="order_name" property="name" />
         <result column="email" property="email" />
+        <result column="phone" property="phone" />
         <result column="address" property="address" />
+        <result column="regDate" property="regDate" />
+        <result column="editDate" property="editDate" />
 
         <collection property="productObjList" ofType="org.wrapper.mybatismapper.order.vo.ProductVO">
-            <id column="seq" property="seq" />
+            <id column="product_seq" property="seq" />
             <result column="order_seq" property="orderSeq" />
-            <result column="name" property="name" />
+            <result column="product_name" property="name" />
             <result column="price" property="price" />
+            <result column="brand" property="brand" />
         </collection>
     </resultMap>
 
     <select id="selectOrderList" resultMap="OrderListMap">
-        SELECT tb_o.seq,
-               tb_o.user_id,
-               tb_o.name,
+        SELECT tb_o.seq AS order_seq,
+               tb_o.userId,
+               tb_o.name AS order_name,
                tb_o.email,
+               tb_o.phone,
                tb_o.address,
+               tb_o.regDate,
+               tb_o.editDate,
+               tb_p.seq AS product_seq,
                tb_p.order_seq,
-               tb_p.name,
+               tb_p.name AS product_name,
                tb_p.price,
                <![CDATA[
                    IF (tb_p.price > 50.0, '고가' , NULL) AS brand
                ]]>
-        FROM tb_order tb_o JOIN tb_product tb_p ON tb_o.seq = tb_p.order_seq
+        FROM tb_order tb_o JOIN tb_product tb_p ON CAST(tb_o.seq AS CHAR) = tb_p.order_seq
         <include refid="selectListOrderWhereClause" />
     </select>
 
     <select id="selectOrderListByOrderSeq" parameterType="java.util.List" resultMap="OrderListMap">
-        SELECT tb_o.seq,
-               tb_o.user_id,
-               tb_o.name,
+        SELECT tb_o.seq AS order_seq,
+               tb_o.userId,
+               tb_o.name AS order_name,
                tb_o.email,
+               tb_o.phone,
                tb_o.address,
+               tb_o.regDate,
+               tb_o.editDate,
+               tb_p.seq AS product_seq,
                tb_p.order_seq,
-               tb_p.name,
+               tb_p.name AS product_name,
                tb_p.price
-        FROM tb_order tb_o JOIN tb_product tb_p ON tb_o.seq = tb_p.order_seq
+        FROM tb_order tb_o JOIN tb_product tb_p ON CAST(tb_o.seq AS CHAR) = tb_p.order_seq
         WHERE  1 = 1
         <if test="orderSeqList != null">
             <foreach collection="orderSeqList" item="seq" open="AND tb_o.seq IN (" separator="," close=")">#{seq}</foreach>
@@ -53,7 +65,7 @@
 
         <!-- 아이디 -->
         <if test="userId != null and userId != ''">
-            AND tb_o.user_id LIKE CONCAT(#{userId}, '%')
+            AND tb_o.userId LIKE CONCAT(#{userId}, '%')
         </if>
 
         <!-- 이름 -->

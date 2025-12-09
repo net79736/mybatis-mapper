@@ -1,10 +1,617 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html lang="UTF-8">
+<!DOCTYPE html>
+<html lang="ko">
 <head>
-    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
-    <title>기본 페이지</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyBatis Mapper - 주문 관리 시스템</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 30px 40px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .search-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .search-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .search-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            color: #555;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .results-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .results-title {
+            font-size: 1.5em;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .results-count {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+            font-size: 1.2em;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc3545;
+        }
+
+        .order-list {
+            display: grid;
+            gap: 20px;
+        }
+
+        .order-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border-left: 5px solid #667eea;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .order-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .order-info {
+            flex: 1;
+        }
+
+        .order-seq {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .order-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .detail-value {
+            font-size: 1em;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .product-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .product-title {
+            font-size: 1.1em;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .product-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            transition: border-color 0.3s ease;
+        }
+
+        .product-card:hover {
+            border-color: #667eea;
+        }
+
+        .product-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 1em;
+        }
+
+        .product-price {
+            color: #667eea;
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .empty-state-text {
+            font-size: 1.2em;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .search-form {
+                grid-template-columns: 1fr;
+            }
+
+            .order-header {
+                flex-direction: column;
+            }
+
+            .order-details {
+                grid-template-columns: 1fr;
+            }
+
+            .product-list {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-기본 페이지 입니다!!!
+    <div class="container">
+        <!-- 헤더 섹션 -->
+        <div class="header">
+            <h1>📦 주문 관리 시스템</h1>
+            <p class="subtitle">MyBatis Mapper를 활용한 주문 조회 및 검색 시스템</p>
+        </div>
+
+        <!-- 검색 섹션 -->
+        <div class="search-section">
+            <h2 class="search-title">🔍 주문 검색</h2>
+            <form id="searchForm" class="search-form">
+                <div class="form-group">
+                    <label for="userId">회원 아이디 (LIKE 검색)</label>
+                    <input type="text" id="userId" name="userId" placeholder="예: user">
+                </div>
+                <div class="form-group">
+                    <label for="name">회원 이름 (LIKE 검색)</label>
+                    <input type="text" id="name" name="name" placeholder="예: 홍길동">
+                </div>
+                <div class="form-group">
+                    <label for="email">회원 이메일 (정확히 일치)</label>
+                    <input type="email" id="email" name="email" placeholder="예: user@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="address">주소 (정확히 일치)</label>
+                    <input type="text" id="address" name="address" placeholder="예: 서울시 강남구">
+                </div>
+                <div class="form-group">
+                    <label for="productName">제품 이름 (정확히 일치)</label>
+                    <input type="text" id="productName" name="productName" placeholder="예: 노트북">
+                </div>
+                <div class="form-group">
+                    <label for="price">가격 이하 (이하 검색)</label>
+                    <input type="number" id="price" name="price" placeholder="예: 100000" step="0.01" min="0">
+                </div>
+            </form>
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="searchOrders()">검색</button>
+                <button class="btn btn-success" onclick="getAllOrders()">전체 조회</button>
+                <button class="btn btn-secondary" onclick="resetForm()">초기화</button>
+            </div>
+        </div>
+
+        <!-- 결과 섹션 -->
+        <div class="results-section">
+            <div class="results-header">
+                <h2 class="results-title">📋 주문 목록</h2>
+                <div class="results-count" id="resultsCount">총 0건</div>
+            </div>
+            <div id="errorMessage" class="error" style="display: none;"></div>
+            <div id="loading" class="loading" style="display: none;">데이터를 불러오는 중...</div>
+            <div id="orderList" class="order-list"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = '/api/orders';
+
+        /**
+         * 검색 조건으로 주문 목록 조회
+         */
+        async function searchOrders() {
+            const form = document.getElementById('searchForm');
+            const formData = new FormData(form);
+            
+            // 빈 값 제거
+            const searchParams = {};
+            for (const [key, value] of formData.entries()) {
+                if (value && value.trim() !== '') {
+                    if (key === 'price') {
+                        searchParams[key] = parseFloat(value);
+                    } else {
+                        searchParams[key] = value.trim();
+                    }
+                }
+            }
+
+            // URL 파라미터 생성
+            const params = new URLSearchParams();
+            Object.keys(searchParams).forEach(key => {
+                params.append(key, searchParams[key]);
+            });
+
+            const url = params.toString() ? `${API_BASE_URL}?${params.toString()}` : `${API_BASE_URL}/all`;
+            
+            await fetchOrders(url);
+        }
+
+        /**
+         * 전체 주문 목록 조회
+         */
+        async function getAllOrders() {
+            await fetchOrders(`${API_BASE_URL}/all`);
+        }
+
+        /**
+         * 주문 목록 조회 (공통 함수)
+         */
+        async function fetchOrders(url) {
+            const loadingEl = document.getElementById('loading');
+            const errorEl = document.getElementById('errorMessage');
+            const orderListEl = document.getElementById('orderList');
+            const resultsCountEl = document.getElementById('resultsCount');
+
+            // 초기화
+            loadingEl.style.display = 'block';
+            errorEl.style.display = 'none';
+            orderListEl.innerHTML = '';
+
+            try {
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const orders = await response.json();
+                
+                loadingEl.style.display = 'none';
+                resultsCountEl.textContent = `총 ${orders.length}건`;
+
+                if (orders.length === 0) {
+                    orderListEl.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📭</div>
+                            <div class="empty-state-text">조회된 주문이 없습니다.</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // 주문 목록 렌더링
+                renderOrders(orders, orderListEl);
+
+            } catch (error) {
+                loadingEl.style.display = 'none';
+                errorEl.style.display = 'block';
+                errorEl.textContent = `오류가 발생했습니다: ${error.message}`;
+                console.error('Error:', error);
+            }
+        }
+
+        /**
+         * 주문 목록 렌더링
+         */
+        function renderOrders(orders, container) {
+            // 주문별로 그룹화 (같은 주문의 제품들을 합침)
+            const orderMap = new Map();
+            
+            orders.forEach(order => {
+                if (!orderMap.has(order.seq)) {
+                    orderMap.set(order.seq, {
+                        ...order,
+                        productObjList: []
+                    });
+                }
+                
+                // 제품 정보가 있으면 추가
+                if (order.productObjList && order.productObjList.length > 0) {
+                    const existingOrder = orderMap.get(order.seq);
+                    order.productObjList.forEach(product => {
+                        // 중복 제품 제거
+                        const exists = existingOrder.productObjList.some(p => 
+                            p.seq === product.seq && p.name === product.name
+                        );
+                        if (!exists) {
+                            existingOrder.productObjList.push(product);
+                        }
+                    });
+                }
+            });
+
+            const groupedOrders = Array.from(orderMap.values());
+            
+            groupedOrders.forEach(order => {
+                const orderCard = createOrderCard(order);
+                container.appendChild(orderCard);
+            });
+        }
+
+        /**
+         * 주문 카드 생성
+         */
+        function createOrderCard(order) {
+            const card = document.createElement('div');
+            card.className = 'order-card';
+
+            const productsHtml = order.productObjList && order.productObjList.length > 0
+                ? `
+                    <div class="product-section">
+                        <div class="product-title">🛍️ 주문 제품 (${order.productObjList.length}개)</div>
+                        <div class="product-list">
+                            ${order.productObjList.map(product => `
+                                <div class="product-card">
+                                    <div class="product-name">${escapeHtml(product.name || '제품명 없음')}</div>
+                                    <div class="product-price">₩${formatNumber(product.price || 0)}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `
+                : '<div class="product-section"><div class="product-title">🛍️ 주문 제품 없음</div></div>';
+
+            card.innerHTML = `
+                <div class="order-header">
+                    <div class="order-info">
+                        <div class="order-seq">주문 번호: ${escapeHtml(order.seq || 'N/A')}</div>
+                    </div>
+                </div>
+                <div class="order-details">
+                    <div class="detail-item">
+                        <span class="detail-label">회원 아이디</span>
+                        <span class="detail-value">${escapeHtml(order.userId || 'N/A')}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">회원 이름</span>
+                        <span class="detail-value">${escapeHtml(order.name || 'N/A')}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">이메일</span>
+                        <span class="detail-value">${escapeHtml(order.email || 'N/A')}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">전화번호</span>
+                        <span class="detail-value">${escapeHtml(order.phone || 'N/A')}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">주소</span>
+                        <span class="detail-value">${escapeHtml(order.address || 'N/A')}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">생성일시</span>
+                        <span class="detail-value">${escapeHtml(order.regDate || 'N/A')}</span>
+                    </div>
+                </div>
+                ${productsHtml}
+            `;
+
+            return card;
+        }
+
+        /**
+         * 폼 초기화
+         */
+        function resetForm() {
+            document.getElementById('searchForm').reset();
+            document.getElementById('orderList').innerHTML = '';
+            document.getElementById('resultsCount').textContent = '총 0건';
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        /**
+         * HTML 이스케이프 (XSS 방지)
+         */
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        /**
+         * 숫자 포맷팅
+         */
+        function formatNumber(num) {
+            return new Intl.NumberFormat('ko-KR').format(num);
+        }
+
+        // 페이지 로드 시 전체 주문 목록 조회
+        window.addEventListener('DOMContentLoaded', () => {
+            getAllOrders();
+        });
+
+        // Enter 키로 검색
+        document.getElementById('searchForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            searchOrders();
+        });
+    </script>
 </body>
 </html>
