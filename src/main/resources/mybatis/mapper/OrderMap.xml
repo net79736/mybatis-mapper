@@ -34,7 +34,10 @@
                tb_p.name AS product_name,
                tb_p.price,
                <![CDATA[
-                   IF (tb_p.price > 50.0, '고가' , NULL) AS brand
+                   CASE
+                       WHEN tb_p.price > 50.0 THEN '고가'
+                       ELSE NULL
+                   END AS brand
                ]]>
         FROM tb_order tb_o JOIN tb_product tb_p ON CAST(tb_o.seq AS CHAR) = tb_p.order_seq
         <include refid="selectListOrderWhereClause" />

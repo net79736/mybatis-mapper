@@ -33,10 +33,17 @@
             position: relative;
         }
 
-        .nav-link {
+        .nav-links {
             position: absolute;
             top: 30px;
             right: 40px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .nav-link {
             padding: 10px 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -53,10 +60,10 @@
         }
 
         @media (max-width: 768px) {
-            .nav-link {
+            .nav-links {
                 position: static;
-                display: inline-block;
                 margin-top: 15px;
+                justify-content: center;
             }
         }
 
@@ -366,7 +373,10 @@
     <div class="container">
         <!-- 헤더 섹션 -->
         <div class="header">
-            <a href="/timezone" class="nav-link">🕐 타임존 테스트</a>
+            <div class="nav-links">
+                <a href="/timezone" class="nav-link">🕐 타임존 테스트</a>
+                <a href="/recommend" class="nav-link">🔗 추천인 URL 복사</a>
+            </div>
             <h1>📦 주문 관리 시스템</h1>
             <p class="subtitle">MyBatis Mapper를 활용한 주문 조회 및 검색 시스템</p>
         </div>
