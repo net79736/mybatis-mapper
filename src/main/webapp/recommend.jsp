@@ -99,39 +99,99 @@
         <div class="row">
             <button type="button" class="button" id="copyBtn">URL 복사</button>
             <button type="button" class="button secondary" id="openBtn">새 탭으로 열기</button>
-        </div>
-        <div class="row">
             <button type="button" class="button share" id="shareBtn">기본 공유</button>
-            <button type="button" class="button kakao" id="kakaoBtn">카카오톡 공유</button>
-            <button type="button" class="button facebook" id="facebookBtn">페이스북 공유</button>
         </div>
-        <p class="hint">카카오톡 공유는 앱 키 등록 후 동작합니다.</p>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://developers.kakao.com/sdk/js/kakao.min.js"></script>
     <script>
         (function () {
-            var memberCodeInput = document.getElementById('memberCode');
-            var shareUrlInput = document.getElementById('shareUrl');
-            var copyBtn = document.getElementById('copyBtn');
-            var openBtn = document.getElementById('openBtn');
-            var shareBtn = document.getElementById('shareBtn');
-            var kakaoBtn = document.getElementById('kakaoBtn');
-            var facebookBtn = document.getElementById('facebookBtn');
+            var memberCodeInput = document.getElementById('memberCode'); // 추천인 코드 입력 필드
+            var shareUrlInput = document.getElementById('shareUrl'); // 회원가입 URL 입력 필드
+            var copyBtn = document.getElementById('copyBtn'); // URL 복사 버튼
+            var openBtn = document.getElementById('openBtn'); // 새 탭으로 열기 버튼
+            var shareBtn = document.getElementById('shareBtn'); // 기본 공유 버튼
 
-            var kakaoAppKey = '';
+            var REQUEST_TIMEOUT_MS = 3000; // 네트워크 응답 대기 시간 (ms)
 
+            // #### 페이지 진입 시 URL 자동 조회
+            (async function () {                
+                console.log('refreshJoinUrl 호출');
+                await refreshJoinUrl();
+            })();
+
+            /**
+             * 회원가입 URL 생성하는 함수
+             */
+             async function refreshJoinUrl() {
+                try {
+                    // 회원가입 URL 생성
+                    await ensureJoinUrl();
+                } catch (error) {
+                    console.log("refreshJoinUrl 에러: " + error); // 에러 로깅 (확인됨)
+                    shareUrlInput.value = '';
+                }
+            }
+
+            /**
+             * 회원가입 URL 생성하는 함수
+             */
+             async function ensureJoinUrl() {
+                var response = await fetchJoinUrl();
+
+                var url = response.url || '';
+                if (!url) {
+                    throw new Error('join_url_empty');
+                }
+                // 회원가입 URL 입력 필드 값 세팅 ⭐⭐
+                shareUrlInput.value = url;
+                return url;
+            }
+
+            /**
+             * 회원가입 URL 조회 API 호출하는 함수
+             */
             async function fetchJoinUrl() {
-                var code = memberCodeInput.value || '';
+                var code = memberCodeInput.value || ''; // 추천인 코드 값
                 return await $.ajax({
                     url: '/api/join-url',
                     method: 'GET',
-                    data: { memberCode: code },
-                    dataType: 'json'
+                    data: { memberCode: code }, // 파라미터
+                    dataType: 'json', // 응답 데이터 타입
+                    timeout: REQUEST_TIMEOUT_MS // 타임아웃 설정
                 });
             }
 
+            /**
+             * #### 추천인 코드 입력 시 URL 갱신
+             *  - 추천인 코드 입력 필드 값이 변경될 때마다 회원가입 URL 생성하는 이벤트 리스너
+             */
+            memberCodeInput.addEventListener('input', refreshJoinUrl);
+
+            /**
+             * #### URL 복사 버튼
+             *  - URL 복사 버튼 클릭 시 회원가입 URL 복사하는 이벤트 리스너
+             */
+            copyBtn.addEventListener('click', async function () {
+                copyBtn.disabled = true; // 버튼 비활성화 (중복 클릭 방지)
+                copyBtn.innerText = '처리 중...'; // 버튼 텍스트 변경
+
+                try {
+                    var url = await ensureJoinUrl();
+                    await copyText(url);
+                    alert('URL이 복사되었습니다.');
+                } catch (error) {
+                    console.log("copyBtn 에러: " + error);
+                    alert('URL 생성 또는 복사에 실패했습니다.');
+                } finally {
+                    copyBtn.disabled = false; // 다시 활성화
+                    copyBtn.innerText = 'URL 복사';
+                }
+            });
+
+            /**
+             * 텍스트 복사하는 함수
+             */
             function copyText(text) {
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     return navigator.clipboard.writeText(text);
@@ -142,48 +202,10 @@
                 return Promise.resolve();
             }
 
-            function buildShareData(url) {
-                return {
-                    title: '추천인 회원가입',
-                    text: '추천인 링크를 통해 회원가입을 진행해주세요.',
-                    url: url
-                };
-            }
-
-            async function ensureJoinUrl() {
-                var response = await fetchJoinUrl();
-                var url = response.url || '';
-                if (!url) {
-                    throw new Error('join_url_empty');
-                }
-                shareUrlInput.value = url;
-                return url;
-            }
-
-            async function refreshJoinUrl() {
-                try {
-                    await ensureJoinUrl();
-                } catch (error) {
-                    shareUrlInput.value = '';
-                }
-            }
-
-            memberCodeInput.addEventListener('input', refreshJoinUrl);
-
-            (async function () {
-                await refreshJoinUrl();
-            })();
-
-            copyBtn.addEventListener('click', async function () {
-                try {
-                    var url = await ensureJoinUrl();
-                    await copyText(url);
-                    alert('URL이 복사되었습니다.');
-                } catch (error) {
-                    alert('URL 생성 또는 복사에 실패했습니다.');
-                }
-            });
-
+            /**
+             * #### 새 탭으로 열기 버튼
+             *  - 새 탭으로 열기 버튼 클릭 시 회원가입 URL 새 탭으로 열기하는 이벤트 리스너
+             */
             openBtn.addEventListener('click', async function () {
                 try {
                     var url = await ensureJoinUrl();
@@ -191,10 +213,15 @@
                         window.open(url, '_blank');
                     }
                 } catch (error) {
+                    console.log("openBtn 에러: " + error);
                     alert('URL 생성에 실패했습니다.');
                 }
             });
 
+            /**
+             * #### 기본 공유 버튼
+             *  - 기본 공유 버튼 클릭 시 회원가입 URL 공유하는 이벤트 리스너
+             */
             shareBtn.addEventListener('click', async function () {
                 if (!navigator.share) {
                     alert('이 브라우저는 기본 공유 기능을 지원하지 않습니다.');
@@ -204,43 +231,21 @@
                     var url = await ensureJoinUrl();
                     await navigator.share(buildShareData(url));
                 } catch (error) {
+                    console.log("shareBtn 에러: " + error);
                     alert('공유에 실패했습니다.');
                 }
             });
 
-            kakaoBtn.addEventListener('click', async function () {
-                if (!kakaoAppKey) {
-                    alert('카카오 앱 키가 설정되지 않았습니다.');
-                    return;
-                }
-                try {
-                    if (window.Kakao && !Kakao.isInitialized()) {
-                        Kakao.init(kakaoAppKey);
-                    }
-                    var url = await ensureJoinUrl();
-                    Kakao.Share.sendDefault({
-                        objectType: 'text',
-                        text: '추천인 링크를 통해 회원가입을 진행해주세요.',
-                        link: {
-                            mobileWebUrl: url,
-                            webUrl: url
-                        },
-                        buttonTitle: '회원가입'
-                    });
-                } catch (error) {
-                    alert('카카오톡 공유에 실패했습니다.');
-                }
-            });
-
-            facebookBtn.addEventListener('click', async function () {
-                try {
-                    var url = await ensureJoinUrl();
-                    var shareUrl = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url);
-                    window.open(shareUrl, '_blank', 'noopener,noreferrer');
-                } catch (error) {
-                    alert('페이스북 공유에 실패했습니다.');
-                }
-            });
+            /**
+             * 공유 데이터 생성하는 함수
+             */
+            function buildShareData(url) {
+                return {
+                    title: '추천인 회원가입',
+                    text: '추천인 링크를 통해 회원가입을 진행해주세요.',
+                    url: url
+                };
+            }
         })();
     </script>
 </body>
