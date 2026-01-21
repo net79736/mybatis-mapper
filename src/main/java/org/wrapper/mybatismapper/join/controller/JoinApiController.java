@@ -27,6 +27,13 @@ public class JoinApiController {
         String baseUrl = getBaseUrl(request);
         String joinUrl = buildJoinUrl(baseUrl, memberCode);
 
+        try {
+            // 테스트를 위해 0.3초 대기
+            Thread.sleep(3000); // 0.3초 대기
+        } catch (InterruptedException e) {
+            System.out.println("InterruptedException: " + e.getMessage());
+        }
+
         Map<String, String> response = new HashMap<>();
         response.put("url", joinUrl);
         response.put("memberCode", memberCode == null ? "" : memberCode);
